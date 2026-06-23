@@ -46,3 +46,6 @@ next-env.d.ts
 .cursor/
 .cursorrules
 
+
+# OneDrive conflict-copy artifacts (legacy)
+*-DuckYou*

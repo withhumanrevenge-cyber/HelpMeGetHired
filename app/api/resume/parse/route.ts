@@ -90,7 +90,8 @@ export async function POST(request: Request) {
 
     const rawText = await callGroq(
       `Extract all information from this resume:\n\n${resumeText.slice(0, 6000)}`,
-      SYSTEM_PROMPT
+      SYSTEM_PROMPT,
+      { meterUserId: user.id }
     )
     const parsedResume = parseJsonFromGroq<ParsedResume>(rawText)
 

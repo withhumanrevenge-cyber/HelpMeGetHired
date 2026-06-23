@@ -34,6 +34,23 @@ function stripHtml(html: string): string {
     .trim()
 }
 
+// Turns raw upstream errors (e.g. Groq's "429 {\"error\":{...}}") into something a user can read.
+function friendlyError(raw: string, fallback: string): string {
+  const text = raw || ""
+  if (/rate.?limit|429|tokens per day|TPD/i.test(text)) {
+    const wait = text.match(/try again in ([\dhms.]+)/i)?.[1]
+    return wait
+      ? `AI is temporarily rate-limited. Try again in ${wait}.`
+      : "AI is temporarily rate-limited. Please try again shortly."
+  }
+  if (/quota|insufficient|billing/i.test(text)) {
+    return "AI quota reached for today. Please try again tomorrow."
+  }
+  // Don't surface raw JSON blobs to users.
+  if (text.trim().startsWith("{") || text.length > 160) return fallback
+  return text || fallback
+}
+
 export default function JobDetailPage() {
   const params  = useParams()
   const router  = useRouter()
@@ -41,7 +58,10 @@ export default function JobDetailPage() {
 
   const [match, setMatch]                   = useState<Match | null>(null)
   const [loading, setLoading]               = useState(true)
+  // `error` = fatal load failures that replace the whole page (job not found, not authenticated).
+  // `actionError` = transient failures from a button (Smart Apply, tailor, etc.) shown inline — never replaces the page.
   const [error, setError]                   = useState<string | null>(null)
+  const [actionError, setActionError]       = useState<string | null>(null)
   const [tailoring, setTailoring]           = useState(false)
   const [tailoredResume, setTailoredResume] = useState<ResumeData | null>(null)
   const [appliedLoading, setAppliedLoading] = useState(false)
@@ -94,26 +114,26 @@ export default function JobDetailPage() {
 
   const handleGenerateInterview = async () => {
     if (!match) return
-    setGeneratingInterview(true); setError(null)
+    setGeneratingInterview(true); setActionError(null)
     try {
       const res = await fetch("/api/interview/generate", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ match_id: match.id, job_id: match.job_id }) })
-      if (!res.ok) { const d = await res.json(); throw new Error(d.error || "Failed.") }
+      if (!res.ok) { const d = await res.json().catch(() => ({})); throw new Error(d.error || "Failed.") }
       const data = await res.json()
       setInterviewQuestions(data.questions)
       setMatch((prev) => prev ? { ...prev, interview_questions: data.questions, interview_generated_at: new Date().toISOString() } : null)
-    } catch (err: unknown) { setError(err instanceof Error ? err.message : "Interview generation failed.") }
+    } catch (err: unknown) { setActionError(friendlyError(err instanceof Error ? err.message : "", "Interview generation failed.")) }
     finally { setGeneratingInterview(false) }
   }
 
   const handleTailorResume = async () => {
     if (!match) return
-    setTailoring(true); setError(null)
+    setTailoring(true); setActionError(null)
     try {
       const res = await fetch("/api/resume/tailor", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ job_id: match.job_id }) })
-      if (!res.ok) { const d = await res.json(); throw new Error(d.error || "Failed to tailor resume.") }
+      if (!res.ok) { const d = await res.json().catch(() => ({})); throw new Error(d.error || "Failed to tailor resume.") }
       const result = await res.json()
       setTailoredResume(result.resume_json)
-    } catch (err: unknown) { setError(err instanceof Error ? err.message : "Resume tailoring failed.") }
+    } catch (err: unknown) { setActionError(friendlyError(err instanceof Error ? err.message : "", "Resume tailoring failed.")) }
     finally { setTailoring(false) }
   }
 
@@ -123,21 +143,21 @@ export default function JobDetailPage() {
       const { error: e } = await supabase.from("matches").update({ tailored_resume_json: updatedResume }).eq("id", match.id)
       if (e) throw e
       setTailoredResume(updatedResume)
-    } catch { setError("Failed to save resume updates.") }
+    } catch { setActionError("Failed to save resume updates.") }
   }
 
   const handleSmartApply = async () => {
     if (!match) return
-    setSmartApplying(true); setError(null)
+    setSmartApplying(true); setActionError(null)
     try {
       const res = await fetch("/api/apply/smart", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ job_id: match.job_id }) })
-      if (!res.ok) { const d = await res.json(); throw new Error(d.error || "Smart apply failed.") }
+      if (!res.ok) { const d = await res.json().catch(() => ({})); throw new Error(d.error || "Smart apply failed.") }
       const data = await res.json()
       setTailoredResume(data.tailored_resume)
       setCoverLetter(data.cover_letter)
       setSmartPanelOpen(true)
     } catch (err: unknown) {
-      setError(err instanceof Error ? err.message : "Smart apply failed.")
+      setActionError(friendlyError(err instanceof Error ? err.message : "", "Smart Apply failed. Please try again."))
     } finally { setSmartApplying(false) }
   }
 
@@ -146,12 +166,12 @@ export default function JobDetailPage() {
       await navigator.clipboard.writeText(text)
       setCopied(kind)
       setTimeout(() => setCopied(null), 1800)
-    } catch { setError("Clipboard not available.") }
+    } catch { setActionError("Clipboard not available.") }
   }
 
   const handleMarkAsApplied = async () => {
     if (!match) return
-    setAppliedLoading(true); setError(null)
+    setAppliedLoading(true); setActionError(null)
     try {
       if (match.id.startsWith("pending-")) {
         const { data: { user } } = await supabase.auth.getUser()
@@ -174,10 +194,10 @@ export default function JobDetailPage() {
         setMatch((prev) => prev ? { ...prev, ...inserted, job: prev.job } : null)
       } else {
         const res = await fetch("/api/apply", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ match_id: match.id }) })
-        if (!res.ok) { const d = await res.json(); throw new Error(d.error || "Failed.") }
+        if (!res.ok) { const d = await res.json().catch(() => ({})); throw new Error(d.error || "Failed.") }
         setMatch((prev) => prev ? { ...prev, status: "applied", applied_at: new Date().toISOString() } : null)
       }
-    } catch (err: unknown) { setError(err instanceof Error ? err.message : "Could not record application.") }
+    } catch (err: unknown) { setActionError(friendlyError(err instanceof Error ? err.message : "", "Could not record application.")) }
     finally { setAppliedLoading(false) }
   }
 
@@ -237,7 +257,12 @@ export default function JobDetailPage() {
       </div>
       </Reveal>
 
-      {error && <p className="text-xs text-red-600 bg-red-50 border border-red-200 rounded-md px-3 py-2">{error}</p>}
+      {actionError && (
+        <div className="flex items-start gap-2 text-xs text-red-700 bg-red-50 border border-red-200 rounded-md px-3 py-2">
+          <span className="flex-1">{actionError}</span>
+          <button onClick={() => setActionError(null)} className="text-red-400 hover:text-red-700 shrink-0">✕</button>
+        </div>
+      )}
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-5">
         <div className="lg:col-span-2 space-y-4">

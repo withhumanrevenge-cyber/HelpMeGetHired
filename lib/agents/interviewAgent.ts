@@ -5,7 +5,8 @@ export async function generateInterviewQuestions(
   jobTitle: string,
   jobCompany: string,
   jobDescription: string,
-  parsedResume: ParsedResume | null
+  parsedResume: ParsedResume | null,
+  userId?: string
 ): Promise<InterviewQuestion[]> {
   const systemPrompt = `You are an expert interview coach at a top tech company. Generate realistic, specific interview questions tailored to the job description and candidate background.
 Return ONLY a JSON array of exactly 10 questions:
@@ -40,7 +41,7 @@ ${candidateContext}
 Generate 10 targeted interview questions for this specific role and candidate.`
 
   try {
-    const response = await callGroq(userPrompt, systemPrompt)
+    const response = await callGroq(userPrompt, systemPrompt, { meterUserId: userId })
     const parsed = parseJsonFromGroq<InterviewQuestion[]>(response)
     if (Array.isArray(parsed) && parsed.length > 0) {
       return parsed

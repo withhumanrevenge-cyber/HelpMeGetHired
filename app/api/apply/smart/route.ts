@@ -2,6 +2,7 @@ import { NextResponse } from "next/server"
 import { createClient, createServiceClient } from "@/lib/supabase/server"
 import { generateTailoredResume } from "@/lib/agents/resumeAgent"
 import { generateCoverLetter } from "@/lib/agents/coverLetterAgent"
+import { gateAction, logUsage } from "@/lib/usage"
 import { Job, ParsedResume, ResumeData } from "@/types"
 
 export async function POST(request: Request) {
@@ -15,6 +16,11 @@ export async function POST(request: Request) {
     const { job_id } = await request.json()
     if (!job_id) {
       return NextResponse.json({ error: "Missing job_id" }, { status: 400 })
+    }
+
+    const gate = await gateAction(user.id, "smart_apply")
+    if (!gate.allowed) {
+      return NextResponse.json({ error: gate.message, upgrade: true }, { status: 402 })
     }
 
     const service = createServiceClient()
@@ -39,6 +45,7 @@ export async function POST(request: Request) {
       job: job as Job,
       parsedResume,
       tailoredResume,
+      userId: user.id,
     })
 
     await service
@@ -49,6 +56,8 @@ export async function POST(request: Request) {
       })
       .eq("user_id", user.id)
       .eq("job_id", job_id)
+
+    await logUsage(user.id, "smart_apply")
 
     return NextResponse.json({
       apply_url: job.url,

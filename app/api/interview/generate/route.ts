@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server"
 import { createClient, createServiceClient } from "@/lib/supabase/server"
 import { generateInterviewQuestions } from "@/lib/agents/interviewAgent"
+import { gateAction, logUsage } from "@/lib/usage"
 import { ParsedResume } from "@/types"
 
 export async function POST(request: Request) {
@@ -16,6 +17,11 @@ export async function POST(request: Request) {
 
     if (!match_id && !job_id) {
       return NextResponse.json({ error: "match_id or job_id is required." }, { status: 400 })
+    }
+
+    const gate = await gateAction(user.id, "interview")
+    if (!gate.allowed) {
+      return NextResponse.json({ error: gate.message, upgrade: true }, { status: 402 })
     }
 
     const service = createServiceClient()
@@ -44,7 +50,8 @@ export async function POST(request: Request) {
       job.title,
       job.company,
       job.description || "",
-      parsedResume
+      parsedResume,
+      user.id
     )
 
     // Save to match record if we have a real match_id
@@ -58,6 +65,8 @@ export async function POST(request: Request) {
         .eq("id", match_id)
         .eq("user_id", user.id)
     }
+
+    await logUsage(user.id, "interview")
 
     return NextResponse.json({ questions })
   } catch (err: unknown) {

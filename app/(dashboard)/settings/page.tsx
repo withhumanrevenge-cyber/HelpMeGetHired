@@ -7,6 +7,7 @@ import { Loader2, Check, AlertTriangle, Mail } from "lucide-react"
 import { calculateDaysAgo } from "@/lib/utils"
 import { ResumeUpload } from "@/components/resume/ResumeUpload"
 import { TagInput } from "@/components/ui/TagInput"
+import { BillingPanel } from "@/components/billing/BillingPanel"
 import { ParsedResume } from "@/types"
 import { Reveal } from "@/components/motion/Reveal"
 import { spring } from "@/lib/motion"
@@ -201,6 +202,8 @@ export default function SettingsPage() {
         </div>
 
         <div className="space-y-5">
+          <BillingPanel />
+
           <div className="bg-white border border-gray-200 rounded-lg p-4 space-y-4">
             <div>
               <p className="text-sm font-medium text-gray-900">Resume</p>

@@ -107,8 +107,8 @@ export async function fetchRemotiveJobs(query?: string): Promise<Partial<Job>[]>
     // Remotive is a remote-only board. If we have a target_role, search by it (works across all categories — designers, PMs, support, ops, etc.).
     // Falls back to the software-dev category only when the user hasn't parsed a resume yet.
     const url = query
-      ? `https://remotive.com/api/remote-jobs?search=${encodeURIComponent(query)}&limit=40`
-      : `https://remotive.com/api/remote-jobs?category=software-dev&limit=40`
+      ? `https://remotive.com/api/remote-jobs?search=${encodeURIComponent(query)}&limit=80`
+      : `https://remotive.com/api/remote-jobs?category=software-dev&limit=80`
     const res = await fetchWithRetry(url, {
       next: { revalidate: 0 },
     })
@@ -168,11 +168,22 @@ export async function fetchAdzunaJobs(query = "software engineer", countryCode =
   try {
     console.log(`Fetching Adzuna jobs for "${query}" in ${cc}...`)
     // Country-specific endpoint. Free tier supports 18 markets.
+    // Pull the first 3 pages (50 each = up to 150 jobs). Adzuna's free tier is generous, so we paginate hard here.
     const encodedQuery = encodeURIComponent(query)
-    const url = `https://api.adzuna.com/v1/api/jobs/${cc.toLowerCase()}/search/1?app_id=${appId}&app_key=${appKey}&what=${encodedQuery}&results_per_page=30`
-    const res = await fetchWithRetry(url, { next: { revalidate: 0 } })
-    const data = await res.json()
-    const results: AdzunaJob[] = data.results || []
+    const pages = [1, 2, 3]
+    const pageResults = await Promise.all(
+      pages.map(async (page) => {
+        try {
+          const url = `https://api.adzuna.com/v1/api/jobs/${cc.toLowerCase()}/search/${page}?app_id=${appId}&app_key=${appKey}&what=${encodedQuery}&results_per_page=50`
+          const res = await fetchWithRetry(url, { next: { revalidate: 0 } })
+          const data = await res.json()
+          return (data.results || []) as AdzunaJob[]
+        } catch {
+          return [] as AdzunaJob[]
+        }
+      })
+    )
+    const results: AdzunaJob[] = pageResults.flat()
 
     return results.map((job: AdzunaJob) => {
       const tags: string[] = []
@@ -225,9 +236,10 @@ export async function fetchJSearchJobs(query = "software engineer", countryCode 
   try {
     const cc = countryCode.toUpperCase()
     console.log(`Fetching JSearch jobs for "${query}" in ${cc}...`)
-    // &country= scopes the search to a single market.
+    // &country= scopes the search to a single market. num_pages kept at 2 — JSearch via RapidAPI has a
+    // limited monthly request quota, so we don't paginate as hard as Adzuna (which is free + generous).
     const encodedQuery = encodeURIComponent(query)
-    const url = `https://jsearch.p.rapidapi.com/search?query=${encodedQuery}&page=1&num_pages=1&country=${cc}`
+    const url = `https://jsearch.p.rapidapi.com/search?query=${encodedQuery}&page=1&num_pages=2&country=${cc}`
     const res = await fetchWithRetry(url, {
       method: "GET",
       headers: {

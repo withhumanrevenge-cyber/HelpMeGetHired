@@ -19,7 +19,15 @@ export default function SignupPage() {
 
   const handleSignup = async (e: React.FormEvent) => {
     e.preventDefault()
-    setError(null); setSuccess(null); setLoading(true)
+    setError(null); setSuccess(null)
+    // App-level gate: the input's minLength can be bypassed (programmatic fill, disabled JS),
+    // and Supabase's own policy is looser (6). Enforce our stated 8-char minimum here so the
+    // contract the UI advertises ("Min. 8 characters") is always the one we apply.
+    if (password.length < 8) {
+      setError("Password must be at least 8 characters.")
+      return
+    }
+    setLoading(true)
     try {
       const { data, error: err } = await supabase.auth.signUp({
         email, password, options: { data: { full_name: fullName } },

@@ -1,5 +1,6 @@
 import { createServiceClient } from "@/lib/supabase/server"
-import { callGroq, parseJsonFromGroq } from "@/lib/groq"
+import { callGroq, parseJsonFromGroq, FAST_MODEL } from "@/lib/groq"
+import { PLAN_LIMITS, effectivePlan } from "@/lib/plans"
 import { Job, Profile, ParsedResume, MatchScoreResult, JobStatus } from "@/types"
 
 export async function scoreJob(
@@ -45,7 +46,8 @@ ${job.description?.slice(0, 2000) || "No description provided."}
 CANDIDATE:
 ${candidateContext}`
 
-  const response = await callGroq(userPrompt, systemPrompt)
+  // Scoring runs on the cheap 8B model — far higher daily token budget, plenty accurate for a 0-100 fit score.
+  const response = await callGroq(userPrompt, systemPrompt, { model: FAST_MODEL, meterUserId: profile.user_id })
 
   const parsed = parseJsonFromGroq<MatchScoreResult>(response)
   if (parsed && typeof parsed.score === "number") {
@@ -98,8 +100,10 @@ export async function matchJobsForUser(userId: string): Promise<{ matched: numbe
     return { matched: 0, skipped: 0 }
   }
 
-  const unmatchedJobs = unmatchedJobsRaw.slice(0, 50)
-  console.log(`Scoring ${unmatchedJobs.length} unmatched jobs with Groq...`)
+  // Free users score fewer jobs per run than Pro — the per-run cap is a plan limit.
+  const perRunCap = PLAN_LIMITS[effectivePlan(profile)].matchPerRun
+  const unmatchedJobs = unmatchedJobsRaw.slice(0, perRunCap)
+  console.log(`Scoring ${unmatchedJobs.length} unmatched jobs with Groq (${FAST_MODEL})...`)
 
   let matchedCount = 0
   let skippedCount = 0
@@ -147,7 +151,7 @@ export async function matchJobsForUser(userId: string): Promise<{ matched: numbe
       else skippedCount++
     }
 
-    await new Promise((resolve) => setTimeout(resolve, 150))
+    await new Promise((resolve) => setTimeout(resolve, 80))
   }
 
   return { matched: matchedCount, skipped: skippedCount }

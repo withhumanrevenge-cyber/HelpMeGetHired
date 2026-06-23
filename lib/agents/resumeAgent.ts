@@ -112,7 +112,7 @@ ${job.description?.slice(0, 2500) || "No description provided."}
 BASE RESUME TO TAILOR:
 ${JSON.stringify(baseResumeData, null, 2)}`
 
-  const response = await callGroq(userPrompt, systemPrompt)
+  const response = await callGroq(userPrompt, systemPrompt, { meterUserId: userId })
 
   let tailoredData: ResumeData
   const parsed = parseJsonFromGroq<ResumeData>(response)

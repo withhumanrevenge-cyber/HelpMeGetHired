@@ -7,6 +7,10 @@ export type JobStatus =
   | 'rejected'
   | 'offer'
 
+export type Plan = 'free' | 'pro' | 'lifetime'
+// User-facing metered actions, used for quota counting in usage_events.
+export type UsageAction = 'smart_apply' | 'tailor' | 'interview'
+
 export type JobSource = 'remotive' | 'adzuna' | 'jsearch'
 export type JobType = 'remote' | 'hybrid' | 'onsite' | 'unknown'
 export type ExperienceLevel = 'entry' | 'mid' | 'senior' | 'lead' | 'unknown'
@@ -104,6 +108,12 @@ export interface Profile {
   auto_apply: boolean
   onboarded: boolean
   email_notifications: boolean
+  plan: Plan
+  plan_expires_at: string | null
+  is_admin: boolean
+  billing_provider: 'razorpay' | 'lemonsqueezy' | null
+  billing_customer_id: string | null
+  billing_subscription_id: string | null
 }
 
 export interface ResumeData {

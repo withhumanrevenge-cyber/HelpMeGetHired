@@ -5,9 +5,10 @@ interface CoverLetterArgs {
   job: Job
   parsedResume: ParsedResume | null
   tailoredResume: ResumeData | null
+  userId?: string
 }
 
-export async function generateCoverLetter({ job, parsedResume, tailoredResume }: CoverLetterArgs): Promise<string> {
+export async function generateCoverLetter({ job, parsedResume, tailoredResume, userId }: CoverLetterArgs): Promise<string> {
   const candidateName = tailoredResume?.name || parsedResume?.name || "Candidate"
   const candidateSummary = tailoredResume?.summary || parsedResume?.summary || ""
   const skills = (tailoredResume?.skills || parsedResume?.skills || []).slice(0, 8).join(", ")
@@ -40,6 +41,6 @@ Summary: ${candidateSummary}
 
 Write the cover letter body.`
 
-  const text = await callGroq(userPrompt, systemPrompt)
+  const text = await callGroq(userPrompt, systemPrompt, { meterUserId: userId })
   return text.trim()
 }
