@@ -2,9 +2,9 @@ import { NextResponse } from "next/server"
 import { createClient } from "@/lib/supabase/server"
 import { callGroq, parseJsonFromGroq } from "@/lib/groq"
 import { ParsedResume } from "@/types"
-import { PDFParse } from "pdf-parse"
+import { extractText, getDocumentProxy } from "unpdf"
 
-// pdf-parse uses pdfjs-dist, which needs the full Node runtime (not Edge) and time for parse + AI structuring.
+// unpdf is serverless-safe (no pdfjs-dist worker or browser globals needed).
 export const runtime = "nodejs"
 export const maxDuration = 60
 
@@ -64,10 +64,10 @@ export async function POST(request: Request) {
     const pdfData = new Uint8Array(bytes)
 
     let resumeText = ""
-    const parser = new PDFParse({ data: pdfData })
     try {
-      const result = await parser.getText()
-      resumeText = result.text?.trim() || ""
+      const pdf = await getDocumentProxy(pdfData)
+      const { text } = await extractText(pdf, { mergePages: true })
+      resumeText = (typeof text === "string" ? text : (text as string[]).join("\n")).trim()
     } catch (err) {
       const detail = err instanceof Error ? err.message : String(err)
       console.error("PDF text extraction failed:", detail)
@@ -75,8 +75,6 @@ export async function POST(request: Request) {
         { error: `Could not read PDF: ${detail}. Make sure the file contains selectable text (not a scanned image).` },
         { status: 422 }
       )
-    } finally {
-      await parser.destroy().catch(() => {})
     }
 
     if (!resumeText || resumeText.length < 50) {
