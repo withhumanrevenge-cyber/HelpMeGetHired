@@ -4,8 +4,8 @@ import { PLAN_CONFIG } from "@/lib/plans"
 export const PRICING = {
   proUsd: PLAN_CONFIG.pro.priceUsd,
   premiumUsd: PLAN_CONFIG.premium.priceUsd,
-  proInrPaise: 99900,
-  premiumInrPaise: 199900,
+  proInrPaise: 39900,
+  premiumInrPaise: 79900,
 }
 
 export function planFromLemonVariant(variantId: string | number | undefined): Plan | null {
