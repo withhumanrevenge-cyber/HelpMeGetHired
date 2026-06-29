@@ -16,7 +16,6 @@ export async function GET(request: Request) {
 
   const supabase = await createClient()
 
-  // Path 1: PKCE code exchange (OAuth providers and some email flows)
   if (code) {
     const { data, error } = await supabase.auth.exchangeCodeForSession(code)
     
@@ -45,11 +44,9 @@ export async function GET(request: Request) {
     }
   }
 
-  // Path 2: Email confirmation via token_hash (Supabase email templates)
   if (token_hash && type) {
     const { error } = await supabase.auth.verifyOtp({ token_hash, type })
     if (!error) {
-      // Email confirmed — send them to onboarding or dashboard
       return NextResponse.redirect(new URL(next, requestUrl.origin))
     }
   }

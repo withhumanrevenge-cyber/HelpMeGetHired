@@ -25,7 +25,6 @@ export async function POST(request: Request) {
 
     const service = createServiceClient()
 
-    // Fetch the job details
     const { data: job, error: jobErr } = await service
       .from("jobs")
       .select("*")
@@ -36,7 +35,6 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: "Job not found." }, { status: 404 })
     }
 
-    // Fetch parsed resume from profile
     const { data: profile } = await service
       .from("profiles")
       .select("parsed_resume")
@@ -45,7 +43,6 @@ export async function POST(request: Request) {
 
     const parsedResume: ParsedResume | null = profile?.parsed_resume ?? null
 
-    // Consume quota right before the paid work, so validation failures above never cost the user.
     const gate = await gateAction(user.id, "interview")
     if (!gate.allowed) {
       return NextResponse.json({ error: gate.message, upgrade: true }, { status: 402 })
@@ -60,7 +57,6 @@ export async function POST(request: Request) {
       user.id
     )
 
-    // Save to match record if we have a real match_id
     if (match_id && !match_id.startsWith("pending-")) {
       await service
         .from("matches")

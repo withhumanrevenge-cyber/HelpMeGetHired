@@ -3,10 +3,8 @@ import { createClient } from "@/lib/supabase/server"
 import { lemonVariantForPlan } from "@/lib/billing/config"
 import { Plan } from "@/types"
 
-const APP_URL = process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3001"
+const APP_URL = process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000"
 
-// Creates a Lemon Squeezy hosted checkout and returns its URL. The client redirects there.
-// user_id is stashed in checkout custom data so the webhook can map the payment back to the user.
 export async function POST(request: Request) {
   try {
     const supabase = await createClient()

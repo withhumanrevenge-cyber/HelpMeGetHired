@@ -5,7 +5,6 @@ import { Plan } from "@/types"
 
 const VALID: Plan[] = ["free", "pro", "premium"]
 
-// Manual plan override from the admin dashboard (comp accounts, refunds, support).
 export async function POST(request: Request) {
   const admin = await getAdminUser()
   if (!admin) return NextResponse.json({ error: "Forbidden" }, { status: 403 })
@@ -15,7 +14,6 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "user_id and a valid plan are required." }, { status: 400 })
   }
 
-  // A manually-set paid tier gets a 30-day window; free has no expiry.
   const plan_expires_at =
     plan === "free" ? null : new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString()
 

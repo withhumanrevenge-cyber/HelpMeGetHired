@@ -52,7 +52,6 @@ export function BillingPanel() {
   const { allotment, used, remaining } = data.credits
   const pct = allotment > 0 ? Math.min(100, (used / allotment) * 100) : 0
   const low = remaining <= Math.max(2, allotment * 0.15)
-  // Which tiers to offer as upgrades (anything above the current one).
   const upgrades = (["pro", "premium"] as const).filter((p) => PLAN_CONFIG[p].priceUsd > PLAN_CONFIG[data.plan].priceUsd)
 
   return (
@@ -68,7 +67,6 @@ export function BillingPanel() {
         <span className={`text-[10px] font-medium px-1.5 py-0.5 rounded capitalize ${PLAN_TONE[data.plan]}`}>{data.plan}</span>
       </div>
 
-      {/* Credit balance */}
       <div>
         <div className="flex justify-between text-[11px] mb-1">
           <span className="text-gray-500">Credits this month</span>

@@ -30,7 +30,7 @@ export default function ApplicationsPage() {
   if (loading) return <div className="flex items-center justify-center min-h-[500px]"><Loader2 className="w-5 h-5 animate-spin text-gray-400" /></div>
 
   return (
-    <div className="max-w-7xl mx-auto py-8 px-6 space-y-6">
+    <div className="max-w-7xl mx-auto py-6 sm:py-8 px-4 sm:px-6 space-y-6">
       <Reveal>
         <h1 className="text-lg font-semibold text-gray-900">Applications</h1>
         <p className="text-sm text-gray-400 mt-0.5">Jobs you&apos;ve applied to and their progress through interview, offer, or rejection.</p>
@@ -88,7 +88,7 @@ export default function ApplicationsPage() {
                           <div className="space-y-2">
                             <textarea value={notesText} onChange={(e) => setNotesText(e.target.value)}
                               placeholder="Log interview notes, follow-ups..." rows={3}
-                              className="w-full border border-gray-200 rounded-md p-2 text-xs text-gray-700 placeholder-gray-400 focus:outline-none focus:border-gray-900" />
+                              className="w-full border border-gray-200 rounded-md p-2 text-base sm:text-xs text-gray-700 placeholder-gray-400 focus:outline-none focus:border-gray-900" />
                             <div className="flex gap-2 justify-end">
                               <button onClick={() => setActiveNotesId(null)} className="text-[10px] text-gray-400 hover:text-gray-700">Cancel</button>
                               <button onClick={() => handleSaveNotes(match.id)} className="bg-gray-900 text-white text-[10px] font-medium px-2.5 py-1 rounded-md hover:bg-gray-700 transition-colors">Save</button>

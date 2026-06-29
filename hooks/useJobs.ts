@@ -24,8 +24,6 @@ export function useJobs() {
         return
       }
 
-      // Only real matches — rows the matching agent has actually evaluated against your resume.
-      // No client-side synthetic "pending" rows for unscored jobs; that fabricated data is the source of count mismatches.
       const { data: matchesData, error: matchesError } = await supabase
         .from("matches")
         .select(`*, job:jobs(*)`)
@@ -55,8 +53,6 @@ export function useJobs() {
 
   return {
     matches,
-    // allJobRows is preserved as an alias for backward-compatibility with existing consumers.
-    // Both point at the same array — real, AI-evaluated matches only.
     allJobRows: matches,
     loading,
     error,

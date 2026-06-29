@@ -20,9 +20,6 @@ export default function SignupPage() {
   const handleSignup = async (e: React.FormEvent) => {
     e.preventDefault()
     setError(null); setSuccess(null)
-    // App-level gate: the input's minLength can be bypassed (programmatic fill, disabled JS),
-    // and Supabase's own policy is looser (6). Enforce our stated 8-char minimum here so the
-    // contract the UI advertises ("Min. 8 characters") is always the one we apply.
     if (password.length < 8) {
       setError("Password must be at least 8 characters.")
       return
@@ -61,10 +58,10 @@ export default function SignupPage() {
     }
   }
 
-  const inputCls = "w-full border border-gray-200 rounded-md px-3 py-2 text-sm text-gray-900 placeholder-gray-400 focus:border-gray-900 focus:outline-none transition-colors"
+  const inputCls = "w-full border border-gray-200 rounded-md px-3 py-2.5 text-base sm:text-sm text-gray-900 placeholder-gray-400 focus:border-gray-900 focus:outline-none transition-colors"
 
   return (
-    <div className="bg-white border border-gray-200 rounded-lg p-8">
+    <div className="bg-white border border-gray-200 rounded-lg p-6 sm:p-8">
       <h1 className="text-base font-semibold text-gray-900 mb-1">Create an account</h1>
       <p className="text-sm text-gray-500 mb-6">Start finding jobs that fit</p>
 
@@ -113,7 +110,13 @@ export default function SignupPage() {
         Continue with Google
       </button>
 
-      <p className="mt-5 text-center text-xs text-gray-400">
+      <p className="mt-5 text-center text-[11px] text-gray-400 leading-relaxed">
+        By creating an account you agree to our{" "}
+        <Link href="/terms" className="text-gray-600 hover:text-gray-900 underline underline-offset-2">Terms</Link> and{" "}
+        <Link href="/privacy" className="text-gray-600 hover:text-gray-900 underline underline-offset-2">Privacy Policy</Link>.
+      </p>
+
+      <p className="mt-3 text-center text-xs text-gray-400">
         Already have an account?{" "}
         <Link href="/login" className="text-gray-900 font-medium hover:underline">Sign in</Link>
       </p>

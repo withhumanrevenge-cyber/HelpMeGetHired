@@ -22,7 +22,6 @@ export function JobFilters({ showStatusFilter = true, matches = [] }: JobFilters
   const { searchQuery, statusFilter, sourceFilter, jobTypeFilter, countryFilter, regionFilter, experienceFilter, timeFilter,
           setSearchQuery, setStatusFilter, setSourceFilter, setJobTypeFilter, setCountryFilter, setRegionFilter, setExperienceFilter, setTimeFilter, resetFilters } = useDashboardStore()
 
-  // Derive country/region options from the user's actual data so we never offer a filter that returns zero results.
   const countries = useMemo(() => {
     const set = new Set<string>()
     matches.forEach((m) => { if (m.job?.country) set.add(m.job.country) })
@@ -38,7 +37,7 @@ export function JobFilters({ showStatusFilter = true, matches = [] }: JobFilters
     return Array.from(set).sort()
   }, [matches, countryFilter])
 
-  const selectCls = "bg-white border border-gray-200 text-sm text-gray-600 rounded-md py-1.5 px-3 focus:outline-none focus:border-gray-900 cursor-pointer hover:border-gray-400 transition-colors"
+  const selectCls = "bg-white border border-gray-200 text-base sm:text-sm text-gray-600 rounded-md py-1.5 px-3 focus:outline-none focus:border-gray-900 cursor-pointer hover:border-gray-400 transition-colors"
 
   return (
     <div className="space-y-3">
@@ -58,7 +57,7 @@ export function JobFilters({ showStatusFilter = true, matches = [] }: JobFilters
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-gray-400" />
           <input type="text" value={searchQuery} onChange={e => setSearchQuery(e.target.value)}
             placeholder="Search jobs..."
-            className="w-full bg-white border border-gray-200 rounded-md py-1.5 pl-9 pr-3 text-sm text-gray-900 placeholder-gray-400 focus:outline-none focus:border-gray-900 transition-colors" />
+            className="w-full bg-white border border-gray-200 rounded-md py-1.5 pl-9 pr-3 text-base sm:text-sm text-gray-900 placeholder-gray-400 focus:outline-none focus:border-gray-900 transition-colors" />
         </div>
 
         <div className="flex flex-wrap gap-2 items-center w-full md:w-auto">

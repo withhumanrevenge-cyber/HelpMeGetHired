@@ -1,6 +1,8 @@
 import { NextResponse } from "next/server"
 import { createClient } from "@/lib/supabase/server"
 import { syncAllJobs } from "@/lib/agents/jobFetcher"
+import { effectivePlan, PLAN_CONFIG } from "@/lib/plans"
+import { JobSource } from "@/types"
 
 export async function POST() {
   try {
@@ -13,7 +15,7 @@ export async function POST() {
 
     const { data: profile, error: profileErr } = await supabase
       .from("profiles")
-      .select("parsed_resume, target_roles, target_country")
+      .select("parsed_resume, target_roles, target_country, plan, plan_expires_at")
       .eq("user_id", user.id)
       .single()
 
@@ -22,14 +24,18 @@ export async function POST() {
       return NextResponse.json({ error: `Profile load failed: ${profileErr.message}` }, { status: 500 })
     }
 
-    // User-set target roles take precedence; fall back to what the parser inferred.
     const explicit: string[] = Array.isArray(profile?.target_roles) ? profile.target_roles.filter(Boolean) : []
     const inferred = profile?.parsed_resume?.target_role as string | undefined
     const queries: string | string[] | undefined = explicit.length > 0 ? explicit : inferred
 
     const country = profile?.target_country || undefined
 
-    const stats = await syncAllJobs(queries, country)
+    const plan = effectivePlan(profile ?? {})
+    const sources: JobSource[] = PLAN_CONFIG[plan].allSources
+      ? ["remotive", "adzuna", "jsearch"]
+      : ["remotive"]
+
+    const stats = await syncAllJobs(queries, country, { sources })
     return NextResponse.json({
       ...stats,
       country: country || "US (default)",

@@ -46,7 +46,6 @@ ${job.description?.slice(0, 2000) || "No description provided."}
 CANDIDATE:
 ${candidateContext}`
 
-  // Scoring runs on the cheap 8B model — far higher daily token budget, plenty accurate for a 0-100 fit score.
   const response = await callGroq(userPrompt, systemPrompt, { model: FAST_MODEL, meterUserId: profile.user_id })
 
   const parsed = parseJsonFromGroq<MatchScoreResult>(response)
@@ -100,7 +99,6 @@ export async function matchJobsForUser(userId: string): Promise<{ matched: numbe
     return { matched: 0, skipped: 0 }
   }
 
-  // Higher tiers score more jobs per run.
   const perRunCap = PLAN_CONFIG[effectivePlan(profile)].matchPerRun
   const unmatchedJobs = unmatchedJobsRaw.slice(0, perRunCap)
   console.log(`Scoring ${unmatchedJobs.length} unmatched jobs with Groq (${FAST_MODEL})...`)
@@ -131,8 +129,6 @@ export async function matchJobsForUser(userId: string): Promise<{ matched: numbe
       status = passedThreshold ? "reviewed" : "skipped"
     }
 
-    // The agent NEVER marks something as "applied" — that's strictly a user action via Mark Applied / Smart Apply.
-    // High-score jobs land as "reviewed" (displayed as "Matched"); the user decides whether to apply.
     const { error: insertError } = await supabase.from("matches").insert({
       user_id: userId,
       job_id: job.id,

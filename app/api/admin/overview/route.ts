@@ -18,7 +18,6 @@ export async function GET() {
     byPlan[plan]++
   }
 
-  // This month's usage: tokens (cost proxy), credits spent, active users.
   const { data: usage } = await svc
     .from("usage_events")
     .select("user_id, action, tokens, credits, created_at")

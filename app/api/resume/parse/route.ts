@@ -4,7 +4,6 @@ import { callGroq, parseJsonFromGroq } from "@/lib/groq"
 import { ParsedResume } from "@/types"
 import { extractText, getDocumentProxy } from "unpdf"
 
-// unpdf is serverless-safe (no pdfjs-dist worker or browser globals needed).
 export const runtime = "nodejs"
 export const maxDuration = 60
 

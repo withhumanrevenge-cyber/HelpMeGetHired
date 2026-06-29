@@ -13,7 +13,6 @@ import Link from "next/link"
 import { Reveal } from "@/components/motion/Reveal"
 import { Stagger, StaggerItem } from "@/components/motion/Stagger"
 
-// useSearchParams (read in DashboardHome) requires a Suspense boundary for the production build to prerender.
 export default function DashboardPage() {
   return (
     <Suspense fallback={<div className="flex items-center justify-center min-h-[500px]"><Loader2 className="w-5 h-5 animate-spin text-gray-400" /></div>}>
@@ -36,10 +35,7 @@ function DashboardHome() {
     if (matches.length > 0 || allJobRows.length > 0) {
       Promise.resolve().then(() =>
         setStats({
-          // "Jobs in feed" = every match row the agent has produced — same set the Jobs page renders.
           totalJobs:        allJobRows.length,
-          // "Matched" = the count under the Jobs page "Matched" filter (status === "reviewed").
-          // Applied / interview / offer / rejected jobs are counted in their own stats and no longer double-counted here.
           matches:          matches.filter((m) => m.status === "reviewed").length,
           applicationsSent: matches.filter((m) => m.status === "applied").length,
           interviews:       matches.filter((m) => m.status === "interview").length,
@@ -88,7 +84,7 @@ function DashboardHome() {
     .slice(0, 5)
 
   return (
-    <div className="max-w-7xl mx-auto py-8 px-6 space-y-6">
+    <div className="max-w-7xl mx-auto py-6 sm:py-8 px-4 sm:px-6 space-y-6">
 
       {needsResume && (
         <div className="bg-amber-50 border border-amber-200 rounded-lg p-4 flex flex-col sm:flex-row items-start sm:items-center gap-4">

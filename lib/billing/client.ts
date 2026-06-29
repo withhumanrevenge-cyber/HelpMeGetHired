@@ -1,6 +1,3 @@
-// Client-side checkout launcher. Webhooks are the source of truth for entitlement —
-// these calls just open the processor's checkout; the plan flips when the webhook fires.
-
 type Provider = "razorpay" | "lemonsqueezy"
 type PaidPlan = "pro" | "premium"
 
@@ -28,7 +25,6 @@ export async function startCheckout(provider: Provider, plan: PaidPlan): Promise
     return
   }
 
-  // Razorpay
   const res = await fetch("/api/billing/razorpay/checkout", {
     method: "POST",
     headers: { "Content-Type": "application/json" },

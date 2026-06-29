@@ -5,7 +5,6 @@ import { generateCoverLetter } from "@/lib/agents/coverLetterAgent"
 import { gateAction, refundUsage } from "@/lib/usage"
 import { Job, ParsedResume, ResumeData } from "@/types"
 
-// Two sequential 70B Groq calls (tailor + cover letter) — needs more than the default serverless timeout.
 export const runtime = "nodejs"
 export const maxDuration = 60
 
@@ -38,7 +37,6 @@ export async function POST(request: Request) {
 
     const parsedResume: ParsedResume | null = profile?.parsed_resume ?? null
 
-    // Consume quota right before the paid work, so validation failures above never cost the user.
     const gate = await gateAction(user.id, "smart_apply")
     if (!gate.allowed) {
       return NextResponse.json({ error: gate.message, upgrade: true }, { status: 402 })

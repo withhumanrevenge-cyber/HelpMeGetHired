@@ -1,6 +1,3 @@
-// The 18 countries Adzuna's free tier supports as separate endpoints.
-// JSearch accepts the same ISO codes via its `country` query param.
-// Codes are uppercase ISO-3166-1 alpha-2; lowercased on the Adzuna URL.
 export const COUNTRIES: { code: string; name: string }[] = [
   { code: "US", name: "United States" },
   { code: "IN", name: "India" },
@@ -27,5 +24,4 @@ export const COUNTRY_NAME: Record<string, string> = Object.fromEntries(COUNTRIES
 
 export const DEFAULT_COUNTRY = "US"
 
-// Subset Adzuna actually supports as separate URL endpoints.
 export const ADZUNA_SUPPORTED = new Set(COUNTRIES.map((c) => c.code))

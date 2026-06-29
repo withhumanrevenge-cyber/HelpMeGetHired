@@ -1,8 +1,5 @@
 import { JobStatus, JobType, JobSource, ExperienceLevel, TimeFilter } from "@/types"
 
-// Single source of truth for how a job's status is displayed to the user.
-// The DB value `reviewed` is shown as "Matched" because that word reflects what the AI agent did
-// — it matched the job to the user's resume above their threshold. "Reviewed" implied a human action.
 export const STATUS_LABEL: Record<JobStatus, string> = {
   pending:   "Not scored",
   reviewed:  "Matched",
@@ -37,7 +34,6 @@ export const JOB_TYPE_TONE: Record<JobType, string> = {
   unknown: "bg-gray-50 text-gray-400 border-gray-200",
 }
 
-// Proper-cased platform names. The DB stores lowercase keys but users see the brand spelling.
 export const SOURCE_LABEL: Record<JobSource, string> = {
   remotive: "Remotive",
   adzuna:   "Adzuna",
@@ -59,7 +55,6 @@ export const TIME_LABEL: Record<TimeFilter, string> = {
   "30d": "Last 30 days",
 }
 
-// Threshold in milliseconds; null means no time filter.
 export const TIME_THRESHOLD_MS: Record<TimeFilter, number | null> = {
   all:   null,
   "24h": 24 * 60 * 60 * 1000,

@@ -3,10 +3,10 @@ import { redirect } from "next/navigation"
 import { createClient } from "@/lib/supabase/server"
 import { ArrowRight, Check } from "lucide-react"
 import { Reveal } from "@/components/motion/Reveal"
+import { getPricingTiers, CREDIT_SUMMARY } from "@/lib/marketing/pricing"
+import { detectCurrency } from "@/lib/marketing/geo"
 
 export default async function LandingPage({ searchParams }: { searchParams: Promise<{ code?: string }> }) {
-  // Safety net: if an OAuth provider lands the auth code on "/" (e.g. Supabase falling back to Site URL),
-  // forward it to the callback route that actually exchanges it for a session.
   const { code } = await searchParams
   if (code) redirect(`/api/auth/callback?code=${encodeURIComponent(code)}`)
 
@@ -14,12 +14,15 @@ export default async function LandingPage({ searchParams }: { searchParams: Prom
   const { data: { user } } = await supabase.auth.getUser()
   if (user) redirect("/dashboard")
 
+  const currency = await detectCurrency()
+  const PRICING_TIERS = getPricingTiers(currency)
+
   return (
     <div className="min-h-screen bg-white font-sans">
       <header className="border-b border-gray-100">
-        <div className="max-w-5xl mx-auto px-6 h-14 flex items-center justify-between">
+        <div className="max-w-5xl mx-auto px-4 sm:px-6 h-14 flex items-center justify-between">
           <span className="text-sm font-semibold text-gray-900">JobAgent</span>
-          <nav className="flex items-center gap-6">
+          <nav className="flex items-center gap-4 sm:gap-6">
             <Link href="/pricing" className="text-sm text-gray-500 hover:text-gray-900 transition-colors">Pricing</Link>
             <Link href="/login"   className="text-sm text-gray-500 hover:text-gray-900 transition-colors">Sign in</Link>
             <Link href="/signup"  className="bg-gray-900 text-white text-sm font-medium px-3.5 py-1.5 rounded-md hover:bg-gray-700 transition-colors">
@@ -29,13 +32,13 @@ export default async function LandingPage({ searchParams }: { searchParams: Prom
         </div>
       </header>
 
-      <section className="max-w-3xl mx-auto px-6 pt-20 pb-16 text-center">
+      <section className="max-w-3xl mx-auto px-4 sm:px-6 pt-14 sm:pt-20 pb-14 sm:pb-16 text-center">
         <Reveal>
           <p className="text-xs font-medium text-gray-400 uppercase tracking-widest mb-5">Job search automation</p>
         </Reveal>
         <Reveal delay={0.06}>
-          <h1 className="text-5xl font-semibold tracking-tight text-gray-900 leading-[1.1] mb-6">
-            Find jobs that match<br />who you actually are
+          <h1 className="text-3xl sm:text-4xl md:text-5xl font-semibold tracking-tight text-gray-900 leading-[1.1] mb-6 text-balance">
+            Find jobs that match<br className="hidden sm:block" /> who you actually are
           </h1>
         </Reveal>
         <Reveal delay={0.12}>
@@ -58,7 +61,7 @@ export default async function LandingPage({ searchParams }: { searchParams: Prom
 
       <div className="border-t border-gray-100" />
 
-      <section className="max-w-5xl mx-auto px-6 py-16">
+      <section className="max-w-5xl mx-auto px-4 sm:px-6 py-16">
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
           {[
             { title: "Resume Parser",     desc: "Your PDF is read and structured automatically. Skills, experience, target role — extracted in seconds." },
@@ -76,7 +79,7 @@ export default async function LandingPage({ searchParams }: { searchParams: Prom
 
       <div className="border-t border-gray-100" />
 
-      <section className="max-w-5xl mx-auto px-6 py-16">
+      <section className="max-w-5xl mx-auto px-4 sm:px-6 py-16">
         <p className="text-xs font-medium text-gray-400 uppercase tracking-widest mb-10">How it works</p>
         <div className="grid grid-cols-1 md:grid-cols-4 gap-8">
           {[
@@ -98,48 +101,54 @@ export default async function LandingPage({ searchParams }: { searchParams: Prom
 
       <div className="border-t border-gray-100" />
 
-      <section className="max-w-3xl mx-auto px-6 py-16">
+      <section className="max-w-5xl mx-auto px-4 sm:px-6 py-16">
         <p className="text-xs font-medium text-gray-400 uppercase tracking-widest mb-10">Pricing</p>
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          <div className="border border-gray-200 rounded-lg p-6">
-            <p className="text-sm font-semibold text-gray-900 mb-1">Free</p>
-            <p className="text-3xl font-semibold text-gray-900 mb-1">$0</p>
-            <p className="text-sm text-gray-400 mb-6">Forever</p>
-            <ul className="space-y-2.5 mb-6">
-              {["50 job matches / month", "3 resume tailors / month", "Remotive jobs", "Interview prep", "Application tracker"].map(f => (
-                <li key={f} className="flex items-center gap-2.5 text-sm text-gray-600">
-                  <Check className="w-3.5 h-3.5 text-gray-400 shrink-0" />{f}
-                </li>
-              ))}
-            </ul>
-            <Link href="/signup" className="block text-center border border-gray-200 text-gray-700 text-sm font-medium py-2 rounded-md hover:border-gray-900 hover:text-gray-900 transition-colors">
-              Get started
-            </Link>
-          </div>
-
-          <div className="border border-gray-900 rounded-lg p-6">
-            <p className="text-sm font-semibold text-gray-900 mb-1">Pro</p>
-            <p className="text-3xl font-semibold text-gray-900 mb-1">$9<span className="text-base font-normal text-gray-400">/mo</span></p>
-            <p className="text-sm text-gray-400 mb-6">Cancel anytime</p>
-            <ul className="space-y-2.5 mb-6">
-              {["Unlimited matches & tailoring", "All job sources (Adzuna + JSearch)", "ATS score optimization", "Export resume as PDF", "Email alerts for new matches", "Priority processing"].map(f => (
-                <li key={f} className="flex items-center gap-2.5 text-sm text-gray-600">
-                  <Check className="w-3.5 h-3.5 text-gray-900 shrink-0" />{f}
-                </li>
-              ))}
-            </ul>
-            <Link href="/signup" className="block text-center bg-gray-900 text-white text-sm font-medium py-2 rounded-md hover:bg-gray-700 transition-colors">
-              Start free trial
-            </Link>
-          </div>
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+          {PRICING_TIERS.map((tier) => (
+            <div key={tier.name}
+              className={`rounded-lg border p-6 flex flex-col ${tier.featured ? "border-gray-900" : "border-gray-200"}`}>
+              {tier.featured && (
+                <span className="self-start text-[10px] font-medium uppercase tracking-wider bg-gray-900 text-white px-2 py-0.5 rounded mb-3">Most popular</span>
+              )}
+              <p className="text-sm font-semibold text-gray-900 mb-1">{tier.name}</p>
+              <p className="text-3xl font-semibold text-gray-900 mb-1">
+                {tier.priceLabel}
+                {tier.period === "per month" && <span className="text-base font-normal text-gray-400">/mo</span>}
+              </p>
+              <p className="text-sm text-gray-400 mb-6">{tier.period === "forever" ? "Forever" : "Cancel anytime"}</p>
+              <ul className="space-y-2.5 mb-6 flex-1">
+                {tier.features.map((f) => (
+                  <li key={f} className="flex items-start gap-2.5 text-sm text-gray-600">
+                    <Check className={`w-3.5 h-3.5 shrink-0 mt-0.5 ${tier.featured ? "text-gray-900" : "text-gray-400"}`} />{f}
+                  </li>
+                ))}
+              </ul>
+              <Link href={tier.href}
+                className={`block text-center text-sm font-medium py-2 rounded-md transition-colors ${
+                  tier.featured ? "bg-gray-900 text-white hover:bg-gray-700" : "border border-gray-200 text-gray-700 hover:border-gray-900 hover:text-gray-900"
+                }`}>
+                {tier.cta}
+              </Link>
+            </div>
+          ))}
         </div>
+        <p className="text-xs text-gray-400 mt-6 text-center">{CREDIT_SUMMARY}</p>
+        {currency === "INR" && (
+          <p className="text-[11px] text-gray-400 mt-1.5 text-center">Prices shown in ₹ for India · pay by UPI or card. International pricing in USD.</p>
+        )}
       </section>
 
       <div className="border-t border-gray-100" />
 
-      <footer className="max-w-5xl mx-auto px-6 py-8 flex items-center justify-between">
+      <footer className="max-w-5xl mx-auto px-4 sm:px-6 py-8 flex flex-col sm:flex-row gap-3 items-start sm:items-center justify-between">
         <span className="text-sm font-semibold text-gray-900">JobAgent</span>
-        <p className="text-xs text-gray-400">© {new Date().getFullYear()} · <a href="mailto:withhumanrevenge@gmail.com" className="hover:text-gray-600 transition-colors">Contact</a></p>
+        <div className="flex flex-wrap items-center gap-x-4 gap-y-2 text-xs text-gray-400">
+          <Link href="/pricing" className="hover:text-gray-600 transition-colors">Pricing</Link>
+          <Link href="/privacy" className="hover:text-gray-600 transition-colors">Privacy</Link>
+          <Link href="/terms" className="hover:text-gray-600 transition-colors">Terms</Link>
+          <a href="mailto:withhumanrevenge@gmail.com" className="hover:text-gray-600 transition-colors">Contact</a>
+          <span>© {new Date().getFullYear()}</span>
+        </div>
       </footer>
     </div>
   )

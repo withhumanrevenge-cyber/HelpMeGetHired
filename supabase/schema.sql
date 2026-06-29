@@ -11,6 +11,10 @@ create table profiles (
   match_threshold   int not null default 70 check (match_threshold between 0 and 100),
   auto_apply        boolean not null default false,
   onboarded         boolean not null default false,
+  parsed_resume     jsonb,
+  resume_parsed_at  timestamptz,
+  target_roles      text[] not null default '{}',
+  target_country    text,
   created_at        timestamptz not null default now(),
   updated_at        timestamptz not null default now()
 );
@@ -97,3 +101,8 @@ create trigger profiles_updated_at before update on profiles
 -- alter table profiles add column if not exists email text;
 -- alter table profiles add column if not exists phone text;
 -- alter table profiles add column if not exists onboarded boolean not null default false;
+-- alter table profiles add column if not exists parsed_resume jsonb;
+-- alter table profiles add column if not exists resume_parsed_at timestamptz;
+-- alter table profiles add column if not exists target_roles text[] not null default '{}';
+-- alter table profiles add column if not exists target_country text;
+-- See supabase/migrations/002_onboarding_columns.sql for the runnable version.

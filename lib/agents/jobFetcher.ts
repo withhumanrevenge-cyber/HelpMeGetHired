@@ -10,21 +10,16 @@ function detectJobType(location: string | null, description: string | null, isRe
   return isRemoteFlag ? "remote" : "unknown"
 }
 
-// Detects seniority from the job title. Title is more reliable than description — most listings
-// follow conventions like "Senior X", "Staff X", "Junior X", "X Intern".
 function detectExperienceLevel(title: string): ExperienceLevel {
   const t = title.toLowerCase()
-  // Word-boundary-anchored to avoid matching "associated" as "associate", etc.
   if (/\b(staff|principal|architect|distinguished|director|vp|head of|tech lead|engineering manager|founding)\b/.test(t)) return "lead"
   if (/\b(senior|sr\.?)\b/.test(t)) return "senior"
   if (/\b(junior|jr\.?|entry[- ]?level|intern|internship|associate|graduate|new grad)\b/.test(t)) return "entry"
-  // Roman-numeral level convention: "Engineer I" = entry, "II" = mid, "III"/"IV" = senior.
   if (/\bengineer\s+i\b/.test(t)) return "entry"
   if (/\bengineer\s+iii\b|\bengineer\s+iv\b/.test(t)) return "senior"
   return "mid"
 }
 
-// Best-effort country normalization for Remotive's freeform `candidate_required_location` strings.
 function normalizeRemotiveCountry(loc: string | undefined): string | null {
   if (!loc) return null
   const lower = loc.toLowerCase()
@@ -36,7 +31,6 @@ function normalizeRemotiveCountry(loc: string | undefined): string | null {
   if (lower.includes("europe") || lower.includes("emea")) return "Europe"
   if (lower.includes("apac") || lower.includes("asia")) return "Asia"
   if (lower.includes("latam") || lower.includes("south america")) return "Latin America"
-  // For specific countries we don't enumerate, fall back to the raw string trimmed.
   const trimmed = loc.trim()
   return trimmed.length > 0 && trimmed.length < 50 ? trimmed : null
 }
@@ -103,9 +97,6 @@ async function fetchWithRetry(
 
 export async function fetchRemotiveJobs(query?: string): Promise<Partial<Job>[]> {
   try {
-    console.log(`Fetching Remotive jobs${query ? ` for "${query}"` : ""}...`)
-    // Remotive is a remote-only board. If we have a target_role, search by it (works across all categories — designers, PMs, support, ops, etc.).
-    // Falls back to the software-dev category only when the user hasn't parsed a resume yet.
     const url = query
       ? `https://remotive.com/api/remote-jobs?search=${encodeURIComponent(query)}&limit=80`
       : `https://remotive.com/api/remote-jobs?category=software-dev&limit=80`
@@ -166,9 +157,6 @@ export async function fetchAdzunaJobs(query = "software engineer", countryCode =
   }
 
   try {
-    console.log(`Fetching Adzuna jobs for "${query}" in ${cc}...`)
-    // Country-specific endpoint. Free tier supports 18 markets.
-    // Pull the first 3 pages (50 each = up to 150 jobs). Adzuna's free tier is generous, so we paginate hard here.
     const encodedQuery = encodeURIComponent(query)
     const pages = [1, 2, 3]
     const pageResults = await Promise.all(
@@ -195,7 +183,6 @@ export async function fetchAdzunaJobs(query = "software engineer", countryCode =
 
       const adzLoc = job.location?.display_name || ""
       const jobType = detectJobType(adzLoc, job.description || null)
-      // Adzuna's `area` is a hierarchical array: [country, state/region, city, ...]. The country slot matches our endpoint.
       const area = job.location?.area ?? []
       const country = COUNTRY_NAME[cc] || area[0] || "Unknown"
       const region = area[1] || null
@@ -235,9 +222,6 @@ export async function fetchJSearchJobs(query = "software engineer", countryCode 
 
   try {
     const cc = countryCode.toUpperCase()
-    console.log(`Fetching JSearch jobs for "${query}" in ${cc}...`)
-    // &country= scopes the search to a single market. num_pages kept at 2 — JSearch via RapidAPI has a
-    // limited monthly request quota, so we don't paginate as hard as Adzuna (which is free + generous).
     const encodedQuery = encodeURIComponent(query)
     const url = `https://jsearch.p.rapidapi.com/search?query=${encodedQuery}&page=1&num_pages=2&country=${cc}`
     const res = await fetchWithRetry(url, {
@@ -263,7 +247,6 @@ export async function fetchJSearchJobs(query = "software engineer", countryCode 
 
       const jsLoc = [job.job_city, job.job_state, job.job_country].filter(Boolean).join(", ") || ""
       const jsIsRemote = job.job_is_remote ?? false
-      // JSearch returns ISO country codes (e.g. "US"). Normalize the most common ones for display.
       const countryMap: Record<string, string> = { US: "United States", GB: "United Kingdom", CA: "Canada", DE: "Germany", FR: "France", IN: "India", AU: "Australia" }
       const country = job.job_country ? (countryMap[job.job_country] || job.job_country) : null
       const title = job.job_title || "Untitled role"
@@ -292,41 +275,46 @@ export async function fetchJSearchJobs(query = "software engineer", countryCode 
   }
 }
 
-export async function syncAllJobs(queries?: string | string[], countries?: string | string[]): Promise<{ fetched: number; new: number; duplicates: number }> {
-  // Normalize roles. Empty array = no preference → each source uses its default.
+export async function syncAllJobs(
+  queries?: string | string[],
+  countries?: string | string[],
+  opts?: { sources?: JobSource[] },
+): Promise<{ fetched: number; new: number; duplicates: number }> {
+  const sources = opts?.sources ?? ["remotive", "adzuna", "jsearch"]
+  const useRemotive = sources.includes("remotive")
+  const useAdzuna   = sources.includes("adzuna")
+  const useJSearch  = sources.includes("jsearch")
+
   const roleQueries: (string | undefined)[] = Array.isArray(queries)
     ? (queries.length > 0 ? queries : [undefined])
     : [queries]
 
-  // Normalize countries. null/empty falls back to DEFAULT_COUNTRY.
   const countryCodes: string[] = Array.isArray(countries)
     ? (countries.length > 0 ? countries : [DEFAULT_COUNTRY])
     : [countries || DEFAULT_COUNTRY]
 
-  // Cartesian product: (role × country) for the country-scoped sources, and one Remotive call per role.
-  // Remotive is remote-only and country-agnostic, so we don't multiply it.
   const perPairResults = await Promise.all(
     roleQueries.flatMap((q) =>
       countryCodes.map((c) => Promise.all([
-        fetchAdzunaJobs(q, c),
-        fetchJSearchJobs(q, c),
+        useAdzuna  ? fetchAdzunaJobs(q, c)  : Promise.resolve([] as Partial<Job>[]),
+        useJSearch ? fetchJSearchJobs(q, c) : Promise.resolve([] as Partial<Job>[]),
       ]))
     )
   )
-  const remotiveResults = await Promise.all(roleQueries.map((q) => fetchRemotiveJobs(q)))
+  const remotiveResults = useRemotive
+    ? await Promise.all(roleQueries.map((q) => fetchRemotiveJobs(q)))
+    : []
 
   const allRawJobs: Partial<Job>[] = [...perPairResults.flat(2), ...remotiveResults.flat()]
   if (allRawJobs.length === 0) {
     return { fetched: 0, new: 0, duplicates: 0 }
   }
 
-  console.log(`Syncing ${allRawJobs.length} total raw jobs to DB...`)
   const supabase = createServiceClient()
-  
+
   let newCount = 0
   let dupCount = 0
 
-  // Insert one-at-a-time so we can distinguish unique-violation duplicates from real failures.
   for (const rawJob of allRawJobs) {
     try {
       const { data, error } = await supabase
@@ -355,4 +343,3 @@ export async function syncAllJobs(queries?: string | string[], countries?: strin
     duplicates: dupCount,
   }
 }
-

@@ -39,7 +39,6 @@ export default function JobsPage() {
     })
     .sort((a, b) => b.match_score - a.match_score)
 
-  // Tier gate: higher tiers see more of their matches. The rest are locked behind an upgrade.
   const plan = effectivePlan(profile ?? {})
   const cap = PLAN_CONFIG[plan].maxVisibleMatches
   const visibleMatches = filteredMatches.slice(0, cap)
@@ -69,7 +68,7 @@ export default function JobsPage() {
   )
 
   return (
-    <div className="max-w-7xl mx-auto py-8 px-6 space-y-5">
+    <div className="max-w-7xl mx-auto py-6 sm:py-8 px-4 sm:px-6 space-y-5">
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
         <div>
           <h1 className="text-lg font-semibold text-gray-900">Jobs</h1>

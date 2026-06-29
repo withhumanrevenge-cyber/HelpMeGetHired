@@ -3,8 +3,6 @@ import { createClient } from "@/lib/supabase/server"
 import { getCreditState } from "@/lib/usage"
 import { CREDIT_COST, PLAN_CONFIG } from "@/lib/plans"
 
-// The signed-in user's plan, credit balance this month, and the per-action credit costs.
-// Powers the billing panel's "X / Y credits left" indicator.
 export async function GET() {
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()

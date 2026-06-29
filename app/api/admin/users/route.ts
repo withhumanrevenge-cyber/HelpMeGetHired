@@ -30,7 +30,6 @@ export async function GET() {
     .order("created_at", { ascending: false })
     .limit(500)
 
-  // Pull this month's usage once, then bucket per user in memory (cheap for early scale).
   const { data: usage } = await svc
     .from("usage_events")
     .select("user_id, action, tokens, credits")

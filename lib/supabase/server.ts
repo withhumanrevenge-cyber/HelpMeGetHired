@@ -19,7 +19,6 @@ export async function createClient() {
               cookieStore.set(name, value, options)
             )
           } catch {
-            // Called from a Server Component; safe to ignore because middleware refreshes the session.
           }
         },
       },
@@ -27,7 +26,6 @@ export async function createClient() {
   )
 }
 
-// Service-role client bypasses RLS — server-only, never expose to the browser.
 export function createServiceClient() {
   return createSupabaseClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,

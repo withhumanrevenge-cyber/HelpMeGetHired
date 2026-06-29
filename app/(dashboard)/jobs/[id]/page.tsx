@@ -34,7 +34,6 @@ function stripHtml(html: string): string {
     .trim()
 }
 
-// Turns raw upstream errors (e.g. Groq's "429 {\"error\":{...}}") into something a user can read.
 function friendlyError(raw: string, fallback: string): string {
   const text = raw || ""
   if (/rate.?limit|429|tokens per day|TPD/i.test(text)) {
@@ -46,7 +45,6 @@ function friendlyError(raw: string, fallback: string): string {
   if (/quota|insufficient|billing/i.test(text)) {
     return "AI quota reached for today. Please try again tomorrow."
   }
-  // Don't surface raw JSON blobs to users.
   if (text.trim().startsWith("{") || text.length > 160) return fallback
   return text || fallback
 }
@@ -58,8 +56,6 @@ export default function JobDetailPage() {
 
   const [match, setMatch]                   = useState<Match | null>(null)
   const [loading, setLoading]               = useState(true)
-  // `error` = fatal load failures that replace the whole page (job not found, not authenticated).
-  // `actionError` = transient failures from a button (Smart Apply, tailor, etc.) shown inline — never replaces the page.
   const [error, setError]                   = useState<string | null>(null)
   const [actionError, setActionError]       = useState<string | null>(null)
   const [tailoring, setTailoring]           = useState(false)
@@ -218,14 +214,14 @@ export default function JobDetailPage() {
   const card   = "bg-white border border-gray-200 rounded-lg p-4 space-y-3"
 
   return (
-    <div className="max-w-7xl mx-auto py-8 px-6 space-y-6">
+    <div className="max-w-7xl mx-auto py-6 sm:py-8 px-4 sm:px-6 space-y-6">
       <Reveal>
-      <div className="flex justify-between items-start border-b border-gray-100 pb-5 gap-4">
-        <div>
+      <div className="flex flex-col sm:flex-row sm:justify-between sm:items-start border-b border-gray-100 pb-5 gap-3 sm:gap-4">
+        <div className="min-w-0">
           <h1 className="text-lg font-semibold text-gray-900 leading-tight">{job.title}</h1>
           <p className="text-sm text-gray-500 mt-0.5">{job.company}</p>
         </div>
-        <div className="flex gap-2 shrink-0 flex-wrap justify-end">
+        <div className="flex gap-2 shrink-0 flex-wrap sm:justify-end">
           {coverLetter && !smartPanelOpen ? (
             <button onClick={() => setSmartPanelOpen(true)}
               className="flex items-center gap-1.5 text-xs font-medium bg-gray-900 text-white px-3 py-1.5 rounded-md hover:bg-gray-700 transition-colors">

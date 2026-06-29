@@ -8,7 +8,6 @@ export type JobStatus =
   | 'offer'
 
 export type Plan = 'free' | 'pro' | 'premium'
-// Credit-costing actions, logged to usage_events with their credit cost.
 export type UsageAction = 'smart_apply' | 'tailor' | 'interview'
 
 export type JobSource = 'remotive' | 'adzuna' | 'jsearch'

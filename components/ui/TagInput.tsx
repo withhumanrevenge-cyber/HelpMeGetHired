@@ -80,7 +80,7 @@ export function TagInput({ value, onChange, placeholder = "Type a role and press
           onBlur={() => draft && addTag(draft)}
           disabled={atMax}
           placeholder={value.length === 0 ? placeholder : atMax ? `Max ${maxTags} reached` : "Add another..."}
-          className="flex-1 min-w-[120px] bg-transparent text-xs text-gray-900 placeholder-gray-400 outline-none disabled:cursor-not-allowed"
+          className="flex-1 min-w-[120px] bg-transparent text-base sm:text-xs text-gray-900 placeholder-gray-400 outline-none disabled:cursor-not-allowed"
         />
       </div>
       {helperText && <p className="text-[10px] text-gray-400 mt-1.5 leading-relaxed">{helperText}</p>}

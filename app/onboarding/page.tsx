@@ -63,7 +63,6 @@ export default function OnboardingPage() {
     if (!fullName && resume.name)   setFullName(resume.name)
     if (!email    && resume.email)  setEmail(resume.email)
     if (!phone    && resume.phone)  setPhone(resume.phone)
-    // Pre-fill target roles from the parsed resume so user only needs to edit if they want to change direction.
     if (targetRoles.length === 0 && resume.target_role) setTargetRoles([resume.target_role])
   }
 
@@ -83,8 +82,6 @@ export default function OnboardingPage() {
       })
       if (upsertError) throw upsertError
 
-      // Kick off the first sync in the background so the dashboard isn't empty when the user lands.
-      // Fire-and-forget — we don't await; the dashboard will pick up matches as they're written.
       if (parsedResume) {
         fetch("/api/jobs/fetch", { method: "POST" })
           .then(() => fetch("/api/match", { method: "POST" }))
@@ -93,7 +90,12 @@ export default function OnboardingPage() {
 
       router.push("/dashboard?just_onboarded=1")
     } catch (err: unknown) {
-      setError(err instanceof Error ? err.message : "Failed to save.")
+      const msg =
+        err instanceof Error ? err.message
+        : (err && typeof err === "object" && "message" in err && (err as { message?: unknown }).message)
+          ? String((err as { message: unknown }).message)
+        : "Failed to save. Please try again."
+      setError(msg)
     } finally { setSaving(false) }
   }
 
@@ -117,12 +119,12 @@ export default function OnboardingPage() {
 
   const canProceedStep1 = fullName.trim() && email.trim()
 
-  const inputCls = "w-full border border-gray-200 rounded-md py-2 px-3 text-sm text-gray-900 placeholder-gray-400 focus:border-gray-900 focus:outline-none transition-colors"
+  const inputCls = "w-full border border-gray-200 rounded-md py-2.5 px-3 text-base sm:text-sm text-gray-900 placeholder-gray-400 focus:border-gray-900 focus:outline-none transition-colors"
 
   return (
-    <div className="min-h-screen bg-gray-50 flex items-center justify-center p-4">
+    <div className="min-h-screen bg-gray-50 flex items-start sm:items-center justify-center px-4 py-8 sm:py-10">
       <div className="w-full max-w-lg">
-        <div className="text-center mb-8">
+        <div className="text-center mb-6 sm:mb-8">
           <p className="text-sm font-semibold text-gray-900 mb-1">JobAgent</p>
           <h1 className="text-2xl font-bold text-gray-900">Get started</h1>
           <p className="text-gray-500 text-sm mt-1">Complete your profile to start finding jobs that fit.</p>
@@ -146,7 +148,7 @@ export default function OnboardingPage() {
           ))}
         </div>
 
-        <div className="bg-white border border-gray-200 rounded-lg p-6">
+        <div className="bg-white border border-gray-200 rounded-lg p-4 sm:p-6">
           <div className="mb-5">
             <p className="text-sm font-semibold text-gray-900">{STEPS[step - 1].title}</p>
             <p className="text-xs text-gray-400 mt-0.5">{STEPS[step - 1].description}</p>

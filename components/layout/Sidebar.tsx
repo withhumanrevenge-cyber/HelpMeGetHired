@@ -3,10 +3,11 @@
 import { useEffect, useState } from "react"
 import Link from "next/link"
 import { usePathname, useRouter } from "next/navigation"
-import { motion, useReducedMotion } from "framer-motion"
+import { motion, AnimatePresence, useReducedMotion } from "framer-motion"
 import { createClient } from "@/lib/supabase/client"
-import { LayoutDashboard, Briefcase, FileCheck, Settings, LogOut, ShieldCheck } from "lucide-react"
+import { LayoutDashboard, Briefcase, FileCheck, Settings, LogOut, ShieldCheck, X } from "lucide-react"
 import { spring } from "@/lib/motion"
+import { useDashboardStore } from "@/store/dashboardStore"
 
 const NAV = [
   { href: "/dashboard",    icon: LayoutDashboard, label: "Dashboard" },
@@ -21,6 +22,8 @@ export function Sidebar() {
   const supabase = createClient()
   const prefersReduced = useReducedMotion()
   const [isAdmin, setIsAdmin] = useState(false)
+  const sidebarOpen    = useDashboardStore((s) => s.sidebarOpen)
+  const setSidebarOpen = useDashboardStore((s) => s.setSidebarOpen)
 
   useEffect(() => {
     supabase.auth.getUser().then(({ data: { user } }) => {
@@ -30,6 +33,16 @@ export function Sidebar() {
     })
   }, [supabase])
 
+  useEffect(() => { setSidebarOpen(false) }, [pathname, setSidebarOpen])
+
+  useEffect(() => {
+    if (sidebarOpen) {
+      const prev = document.body.style.overflow
+      document.body.style.overflow = "hidden"
+      return () => { document.body.style.overflow = prev }
+    }
+  }, [sidebarOpen])
+
   const handleLogout = async () => {
     await supabase.auth.signOut()
     router.push("/")
@@ -37,12 +50,38 @@ export function Sidebar() {
   }
 
   return (
-    <aside className="w-52 h-full flex flex-col bg-white border-r border-gray-100 shrink-0">
-      <div className="h-14 flex items-center px-4 border-b border-gray-100">
+    <>
+      <AnimatePresence>
+        {sidebarOpen && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: 0.2 }}
+            onClick={() => setSidebarOpen(false)}
+            className="lg:hidden fixed inset-0 z-40 bg-gray-900/40"
+            aria-hidden="true"
+          />
+        )}
+      </AnimatePresence>
+
+      <aside
+        className={`fixed inset-y-0 left-0 z-50 w-64 flex flex-col bg-white border-r border-gray-100 transition-transform duration-300 ease-out
+          lg:static lg:z-auto lg:w-52 lg:translate-x-0 lg:shrink-0
+          ${sidebarOpen ? "translate-x-0" : "-translate-x-full"}`}
+      >
+      <div className="h-14 flex items-center justify-between px-4 border-b border-gray-100">
         <span className="text-sm font-semibold text-gray-900">JobAgent</span>
+        <button
+          onClick={() => setSidebarOpen(false)}
+          className="lg:hidden -mr-1 p-1.5 text-gray-400 hover:text-gray-900 rounded-md transition-colors"
+          aria-label="Close menu"
+        >
+          <X className="w-4 h-4" />
+        </button>
       </div>
 
-      <nav className="flex-1 px-2 py-3 space-y-0.5">
+      <nav className="flex-1 px-2 py-3 space-y-0.5 overflow-y-auto">
         {NAV.map(({ href, icon: Icon, label }) => {
           const active = pathname === href || (href !== "/dashboard" && pathname.startsWith(href))
           return (
@@ -88,6 +127,7 @@ export function Sidebar() {
           Sign out
         </button>
       </div>
-    </aside>
+      </aside>
+    </>
   )
 }

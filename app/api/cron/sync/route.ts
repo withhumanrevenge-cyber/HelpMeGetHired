@@ -10,23 +10,23 @@ export async function GET(request: Request) {
     const { searchParams } = new URL(request.url)
     const cronSecret = process.env.CRON_SECRET
 
+    if (!cronSecret) {
+      return NextResponse.json({ error: "Cron is not configured." }, { status: 503 })
+    }
+
     const authHeader = request.headers.get("Authorization")
     const querySecret = searchParams.get("secret")
 
     const isAuthorized =
-      (authHeader && authHeader === `Bearer ${cronSecret}`) ||
-      (querySecret && querySecret === cronSecret)
+      authHeader === `Bearer ${cronSecret}` ||
+      querySecret === cronSecret
 
-    if (cronSecret && !isAuthorized) {
+    if (!isAuthorized) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
     }
 
-    console.log("Cron sync initiated...")
-
     const supabase = createServiceClient()
 
-    // Collect unique target_roles AND target_countries across all users.
-    // The fetcher takes the cartesian product, so the cron's job pool reflects everyone's preferences.
     const { data: allProfiles } = await supabase
       .from("profiles")
       .select("target_roles, target_country, parsed_resume")
@@ -45,9 +45,7 @@ export async function GET(request: Request) {
     const countries = countryPool.size > 0 ? Array.from(countryPool) : undefined
 
     const fetchStats = await syncAllJobs(queries, countries)
-    console.log("Job listings sync finished:", fetchStats)
 
-    // Match for users who want email digests — they're the only ones who need background scoring.
     const { data: targetProfiles, error: profilesError } = await supabase
       .from("profiles")
       .select("user_id, full_name, email, match_threshold, email_notifications")
@@ -61,8 +59,6 @@ export async function GET(request: Request) {
     const emailStats: { sent: number; skipped: number; failed: number } = { sent: 0, skipped: 0, failed: 0 }
 
     if (targetProfiles && targetProfiles.length > 0) {
-      console.log(`Processing ${targetProfiles.length} profiles for matching + notifications...`)
-
       for (const profile of targetProfiles) {
         try {
           const stats = await matchJobsForUser(profile.user_id)

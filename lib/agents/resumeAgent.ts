@@ -45,7 +45,6 @@ export async function generateTailoredResume(userId: string, jobId: string): Pro
   const supabaseUser = await supabase.auth.getUser()
   const authEmail = supabaseUser.data.user?.email || ""
 
-  // Build base resume from parsed resume if available, or from profile fields
   const baseResumeData: ResumeData = parsedResume
     ? {
         name: parsedResume.name || profile.full_name || "Candidate",
@@ -123,7 +122,6 @@ ${JSON.stringify(baseResumeData, null, 2)}`
     tailoredData = baseResumeData
   }
 
-  // Compute ATS score and attach it
   tailoredData.ats_score = computeAtsScore(tailoredData, job.description || "", job.tags)
 
   await supabase

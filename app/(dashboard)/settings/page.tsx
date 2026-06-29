@@ -83,11 +83,11 @@ export default function SettingsPage() {
 
   if (loading) return <div className="flex items-center justify-center min-h-[500px]"><Loader2 className="w-5 h-5 animate-spin text-gray-400" /></div>
 
-  const inputCls = "w-full border border-gray-200 rounded-md py-2 px-3 text-sm text-gray-900 placeholder-gray-400 focus:border-gray-900 focus:outline-none transition-colors"
+  const inputCls = "w-full border border-gray-200 rounded-md py-2.5 px-3 text-base sm:text-sm text-gray-900 placeholder-gray-400 focus:border-gray-900 focus:outline-none transition-colors"
   const labelCls = "block text-xs text-gray-500 mb-1.5"
 
   return (
-    <div className="max-w-4xl mx-auto py-8 px-6 space-y-6">
+    <div className="max-w-4xl mx-auto py-6 sm:py-8 px-4 sm:px-6 space-y-6">
       <Reveal>
         <h1 className="text-lg font-semibold text-gray-900">Settings</h1>
         <p className="text-sm text-gray-400 mt-0.5">Profile, resume, and matching preferences.</p>

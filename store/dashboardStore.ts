@@ -13,6 +13,7 @@ interface DashboardState {
   selectedJobId: string | null
   syncing: boolean
   refreshKey: number
+  sidebarOpen: boolean
 
   setSearchQuery: (query: string) => void
   setStatusFilter: (status: JobStatus | "all") => void
@@ -25,6 +26,8 @@ interface DashboardState {
   setSelectedJobId: (id: string | null) => void
   setSyncing: (syncing: boolean) => void
   triggerRefresh: () => void
+  setSidebarOpen: (open: boolean) => void
+  toggleSidebar: () => void
   resetFilters: () => void
 }
 
@@ -40,12 +43,12 @@ export const useDashboardStore = create<DashboardState>((set) => ({
   selectedJobId: null,
   syncing: false,
   refreshKey: 0,
+  sidebarOpen: false,
 
   setSearchQuery: (searchQuery) => set({ searchQuery }),
   setStatusFilter: (statusFilter) => set({ statusFilter }),
   setSourceFilter: (sourceFilter) => set({ sourceFilter }),
   setJobTypeFilter: (jobTypeFilter) => set({ jobTypeFilter }),
-  // Changing the country wipes the region — keeping a stale region from a previous country makes no sense.
   setCountryFilter: (countryFilter) => set({ countryFilter, regionFilter: "all" }),
   setRegionFilter: (regionFilter) => set({ regionFilter }),
   setExperienceFilter: (experienceFilter) => set({ experienceFilter }),
@@ -53,5 +56,7 @@ export const useDashboardStore = create<DashboardState>((set) => ({
   setSelectedJobId: (selectedJobId) => set({ selectedJobId }),
   setSyncing: (syncing) => set({ syncing }),
   triggerRefresh: () => set((state) => ({ refreshKey: state.refreshKey + 1 })),
+  setSidebarOpen: (sidebarOpen) => set({ sidebarOpen }),
+  toggleSidebar: () => set((state) => ({ sidebarOpen: !state.sidebarOpen })),
   resetFilters: () => set({ searchQuery: "", statusFilter: "all", sourceFilter: "all", jobTypeFilter: "all", countryFilter: "all", regionFilter: "all", experienceFilter: "all", timeFilter: "all" }),
 }))

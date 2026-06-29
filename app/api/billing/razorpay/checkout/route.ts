@@ -4,8 +4,6 @@ import { createClient } from "@/lib/supabase/server"
 import { razorpayPlanId } from "@/lib/billing/config"
 import { Plan } from "@/types"
 
-// Creates a Razorpay subscription for Pro or Premium. Returns the ids the client needs to open
-// Razorpay Checkout. user_id + plan are stored in `notes` so the webhook can map it back.
 export async function POST(request: Request) {
   try {
     const supabase = await createClient()

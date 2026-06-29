@@ -29,7 +29,6 @@ export async function updateSession(request: NextRequest) {
     }
   )
 
-  // Required: getUser() refreshes the auth token and keeps the session alive.
   const {
     data: { user },
   } = await supabase.auth.getUser()
@@ -39,14 +38,18 @@ export async function updateSession(request: NextRequest) {
     path.startsWith('/login') ||
     path.startsWith('/signup')
   const isApiRoute = path.startsWith('/api')
-  // Marketing + password-recovery pages must be reachable without a session.
-  // Especially /reset-password — Supabase's reset email links here with auth tokens in the URL hash.
   const isPublicRoute =
     isAuthPage ||
     path === '/' ||
     path.startsWith('/pricing') ||
+    path.startsWith('/privacy') ||
+    path.startsWith('/terms') ||
     path.startsWith('/forgot-password') ||
-    path.startsWith('/reset-password')
+    path.startsWith('/reset-password') ||
+    path === '/robots.txt' ||
+    path === '/sitemap.xml' ||
+    path.startsWith('/opengraph-image') ||
+    path.startsWith('/twitter-image')
 
   if (!user && !isPublicRoute && !isApiRoute) {
     const url = request.nextUrl.clone()

@@ -9,12 +9,9 @@ interface GrantArgs {
   provider: Provider
   customerId?: string | null
   subscriptionId?: string | null
-  // Pro subscriptions: the current period end. Lifetime: ignored (no expiry).
   expiresAt?: string | null
 }
 
-// Single source of truth for granting a paid plan. Every webhook (Razorpay or Lemon Squeezy)
-// funnels through here, so entitlement logic lives in exactly one place.
 export async function applyPlan({ userId, plan, provider, customerId, subscriptionId, expiresAt }: GrantArgs): Promise<void> {
   const svc = createServiceClient()
   const { error } = await svc
@@ -30,7 +27,6 @@ export async function applyPlan({ userId, plan, provider, customerId, subscripti
   if (error) console.error("applyPlan failed:", error.message)
 }
 
-// Drop a user back to free when a subscription is cancelled or expires. Matched by subscription id.
 export async function revokeBySubscription(subscriptionId: string): Promise<void> {
   const svc = createServiceClient()
   const { error } = await svc
